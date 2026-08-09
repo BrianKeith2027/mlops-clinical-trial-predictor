@@ -5,12 +5,12 @@ Interactive dashboard for exploring model predictions, feature importance,
 and clinical trial analytics powered by the MLOps pipeline.
 """
 
-import streamlit as st
-import pandas as pd
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
+import streamlit as st
 
 # ---------------------------------------------------------------------------
 # Page Config
@@ -70,7 +70,7 @@ def predict_trial(payload: dict) -> dict | None:
         resp = requests.post(f"{API_URL}/predict", json=payload, timeout=10)
         resp.raise_for_status()
         return resp.json()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - surface any API failure to the user
         st.error(f"Prediction failed: {e}")
         return None
 
@@ -274,8 +274,8 @@ def analytics_page():
     tpr = np.array([0, 0.25, 0.48, 0.65, 0.74, 0.85, 0.92, 0.96, 0.99, 1.0])
 
     fig_roc = go.Figure()
-    fig_roc.add_trace(go.Scatter(x=fpr, y=tpr, mode="lines", name="Model (AUC = 0.847)", line=dict(color="#2ecc71", width=2)))
-    fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line=dict(color="gray", dash="dash")))
+    fig_roc.add_trace(go.Scatter(x=fpr, y=tpr, mode="lines", name="Model (AUC = 0.847)", line={"color": "#2ecc71", "width": 2}))
+    fig_roc.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Random", line={"color": "gray", "dash": "dash"}))
     fig_roc.update_layout(title="Receiver Operating Characteristic", xaxis_title="False Positive Rate", yaxis_title="True Positive Rate", height=400)
     st.plotly_chart(fig_roc, use_container_width=True)
 
