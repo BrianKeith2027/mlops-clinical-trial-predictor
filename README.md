@@ -2,6 +2,14 @@
 
 An end-to-end **MLOps pipeline** for predicting clinical trial outcomes (success/failure) in the pharmaceutical and life sciences domain. Features **FastAPI** model serving, **MLflow** experiment tracking, **Docker** containerization, **GitHub Actions** CI/CD, and a **Streamlit** demo interface.
 
+> ### 📍 Project Status — In Active Development
+>
+> **Committed so far:** `.github/workflows/ci.yml`, `Dockerfile`, `docker-compose.yml`, `src/api/main.py`, `src/app/demo.py`, `src/model/train.py`
+>
+> **Still to be implemented:** `model_config.yaml`, `logging_config.yaml`, `__init__.py`, `generate_synthetic.py`, `preprocess.py`, `validate.py`, `predict.py`, `explain.py`, `registry.py`, `schemas.py`, `middleware.py`, `test_model.py`, `test_api.py`, `test_data.py`, `conftest.py`, `01_eda.ipynb`, `02_model_experiments.ipynb`, `github/workflows/ci.yml`
+>
+> The architecture, setup, and usage sections below describe the target design for this project. Components listed as still to be implemented are tracked in the Roadmap at the end of this README — some setup or usage commands will not run until those land.
+
 ## 📋 Overview
 
 Clinical trials are expensive, time-consuming, and have historically high failure rates — roughly 90% of drug candidates that enter Phase I never reach FDA approval. This project applies machine learning to clinical trial metadata (phase, therapeutic area, sponsor type, enrollment size, trial design, endpoint type) to predict the probability of trial success, enabling pharmaceutical teams to prioritize resources toward higher-probability programs.
@@ -319,3 +327,36 @@ Clinical trials are expensive, time-consuming, and have historically high failur
                                               - ## 📄 License
                                              
                                               - This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🗺️ Roadmap
+
+**Built**
+
+- [x] `.github/workflows/ci.yml`
+- [x] `Dockerfile`
+- [x] `docker-compose.yml`
+- [x] `src/api/main.py`
+- [x] `src/app/demo.py`
+- [x] `src/model/train.py`
+
+**Planned**
+
+- [ ] `model_config.yaml`
+- [ ] `logging_config.yaml`
+- [ ] `__init__.py`
+- [ ] `generate_synthetic.py`
+- [ ] `preprocess.py`
+- [ ] `validate.py`
+- [ ] `predict.py`
+- [ ] `explain.py`
+- [ ] `registry.py`
+- [ ] `schemas.py`
+- [ ] `middleware.py`
+- [ ] `test_model.py`
+- [ ] `test_api.py`
+- [ ] `test_data.py`
+- [ ] `conftest.py`
+- [ ] `01_eda.ipynb`
+- [ ] `02_model_experiments.ipynb`
+- [ ] `github/workflows/ci.yml`
+
