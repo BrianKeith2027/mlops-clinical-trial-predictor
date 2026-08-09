@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import mlflow
@@ -273,7 +273,7 @@ def run_experiment() -> None:
 
     logger.info("Split: %d train / %d test  |  positive rate %.1f%%", len(X_train), len(X_test), y.mean() * 100)
 
-    with mlflow.start_run(run_name=f"xgb-{datetime.now():%Y%m%d-%H%M%S}") as run:
+    with mlflow.start_run(run_name=f"xgb-{datetime.now(timezone.utc):%Y%m%d-%H%M%S}") as run:
         # Log parameters
         mlflow.log_params(HYPERPARAMETERS)
         mlflow.log_param("n_features", len(feature_cols))
