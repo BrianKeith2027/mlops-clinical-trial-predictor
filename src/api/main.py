@@ -10,7 +10,6 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Optional
 
 import joblib
 import numpy as np
@@ -84,10 +83,10 @@ class ModelInfoResponse(BaseModel):
     model_type: str
     model_loaded: bool
     metrics_source: str
-    training_date: Optional[str] = None
-    auc_roc: Optional[float] = None
-    features: Optional[int] = None
-    training_samples: Optional[int] = None
+    training_date: str | None = None
+    auc_roc: float | None = None
+    features: int | None = None
+    training_samples: int | None = None
 
 
 # -- Feature Encoding ----------------------------------------
@@ -136,9 +135,44 @@ def _load_explainer(loaded_model):
         import shap
 
         return shap.TreeExplainer(loaded_model)
-    except Exception as exc:  # pragma: no cover - depends on optional dependency
+    except Exception as exc:  # noqa: BLE001 - optional dependency can fail many ways
         logger.warning("SHAP explainer unavailable, falling back to heuristics: %s", exc)
         return None
+
+
+def _load_model_from_disk():
+    """Load the trained model from disk and build its explainer."""
+    if not os.path.exists(MODEL_PATH):
+        logger.warning(
+            "Model not found at %s. API will return clearly-labelled mock predictions.",
+            MODEL_PATH,
+        )
+        return None, None
+
+    try:
+        loaded = joblib.load(MODEL_PATH)
+    except Exception as exc:  # noqa: BLE001 - a bad artifact must not stop startup
+        logger.error("Error loading model from %s: %s", MODEL_PATH, exc)
+        return None, None
+
+    logger.info("Model loaded from %s", MODEL_PATH)
+    return loaded, _load_explainer(loaded)
+
+
+def _load_metrics_from_disk() -> dict:
+    """Load training metrics from disk, or return an empty dict when unavailable."""
+    if not os.path.exists(METRICS_PATH):
+        return {}
+
+    try:
+        with open(METRICS_PATH, encoding="utf-8") as handle:
+            metrics = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.error("Error loading metrics from %s: %s", METRICS_PATH, exc)
+        return {}
+
+    logger.info("Model metrics loaded from %s", METRICS_PATH)
+    return metrics
 
 
 @app.on_event("startup")
@@ -146,28 +180,8 @@ async def load_model():
     """Load the trained model and its metrics on application startup."""
     global model, model_metrics, explainer
 
-    if os.path.exists(MODEL_PATH):
-        try:
-            model = joblib.load(MODEL_PATH)
-            logger.info("Model loaded from %s", MODEL_PATH)
-            explainer = _load_explainer(model)
-        except Exception as exc:
-            logger.error("Error loading model from %s: %s", MODEL_PATH, exc)
-            model = None
-    else:
-        logger.warning(
-            "Model not found at %s. API will return clearly-labelled mock predictions.",
-            MODEL_PATH,
-        )
-
-    if os.path.exists(METRICS_PATH):
-        try:
-            with open(METRICS_PATH, "r", encoding="utf-8") as handle:
-                model_metrics = json.load(handle)
-            logger.info("Model metrics loaded from %s", METRICS_PATH)
-        except Exception as exc:
-            logger.error("Error loading metrics from %s: %s", METRICS_PATH, exc)
-            model_metrics = {}
+    model, explainer = _load_model_from_disk()
+    model_metrics = _load_metrics_from_disk()
 
 
 def encode_features(trial: TrialInput) -> np.ndarray:
@@ -186,7 +200,7 @@ def encode_features(trial: TrialInput) -> np.ndarray:
     ]])
 
 
-def shap_risk_factors(features: np.ndarray, top_n: int = 3) -> Optional[list[RiskFactor]]:
+def shap_risk_factors(features: np.ndarray, top_n: int = 3) -> list[RiskFactor] | None:
     """Return the top contributing features using SHAP values.
 
     Returns None when no explainer is available so the caller can fall back.
@@ -210,7 +224,7 @@ def shap_risk_factors(features: np.ndarray, top_n: int = 3) -> Optional[list[Ris
             )
             for name, value in ranked
         ]
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception as exc:  # noqa: BLE001 - explanation must never break a prediction
         logger.warning("SHAP explanation failed, falling back to heuristics: %s", exc)
         return None
 
