@@ -1,8 +1,8 @@
-# ============================================================
-# MLOps Clinical Trial Predictor — Dockerfile
+# ==============================================================
+# MLOps Clinical Trial Predictor - Dockerfile
 # Author: Brian Stratton
 # Multi-stage build for production FastAPI serving
-# ============================================================
+# ==============================================================
 
 FROM python:3.11-slim AS base
 
@@ -11,26 +11,30 @@ WORKDIR /app
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-        curl \
-            && rm -rf /var/lib/apt/lists/*
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-            # Python dependencies
-            COPY requirements.txt .
-            RUN pip install --no-cache-dir -r requirements.txt
+# Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-            # ── Production Stage ────────────────────────────────────────
-            FROM base AS production
+# --- Production Stage -----------------------------------------
+FROM base AS production
 
-            COPY src/ ./src/
-            COPY config/ ./config/
-            COPY models/ ./models/
+COPY src/ ./src/
 
-            ENV PYTHONPATH=/app
-            ENV MODEL_PATH=/app/models/xgb_trial_predictor.joblib
+# Model artefacts and local config are produced at runtime, not committed.
+# Mount them in (or run training) to serve real predictions; without them the
+# API starts and returns clearly-labelled mock responses.
+RUN mkdir -p /app/models /app/config
 
-            EXPOSE 8000
+ENV PYTHONPATH=/app
+ENV MODEL_PATH=/app/models/xgb_trial_predictor.joblib
+ENV METRICS_PATH=/app/models/metrics.json
 
-            HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-                CMD curl -f http://localhost:8000/health || exit 1
+EXPOSE 8000
 
-                CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
